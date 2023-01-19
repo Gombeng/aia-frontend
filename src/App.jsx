@@ -1,40 +1,61 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import Card from './Card';
 
 function App() {
-	const baseUri = `http://localhost:4000`;
-	const [data, setData] = useState('');
+	const baseUri = `https://aia-backend.vercel.app`;
+	const [q, setQ] = useState('');
+	const [photos, setPhotos] = useState([]);
+	const [page, setPage] = useState(1);
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		const getData = async () => {
-			await axios
-				.get(`${baseUri}/get`)
-				.then((res) => {
-					// console.log(res.data);
-					setData(res.data);
-				})
-				.catch((err) => console.log(err));
-		};
-
-		getData();
-
-		function jsonFlickrFeed(rsp) {
-			// for (var i = 0; i < rsp.items?.length; i++) {
-			// var blog = rsp.blogs.blog[i];
-
-			// }
-			let item = rsp.items;
-			console.log(rsp);
-		}
-
-		jsonFlickrFeed(data);
-		// console.log()
+		fetchPhotos();
 	}, []);
+
+	async function fetchPhotos() {
+		setLoading(true);
+		const { data } = await axios.get(`${baseUri}/get?page=${page}`);
+		setPhotos((prevPhotos) => [...prevPhotos, ...data.items]);
+		setLoading(false);
+		if (!data.items.length) {
+			setHasMore(false);
+		}
+	}
 
 	return (
 		<div className="App">
-			<h1>hello world</h1>
+			<form className="position-sticky top-0 mb-3 search-box">
+				<h3>Infinite Photos From Everyone</h3>
+				<input
+					type="text"
+					className="form-control p-2"
+					placeholder="Search"
+					value={q}
+					onChange={(e) => setQ(e.target.value)}
+				/>
+			</form>
+			<InfiniteScroll
+				dataLength={photos.length}
+				next={fetchPhotos}
+				hasMore={true}
+				loader={<h4>Loading...</h4>}
+				endMessage={
+					<p style={{ textAlign: 'center' }}>
+						<b>Yay! You have seen it all</b>
+					</p>
+				}
+			>
+				{photos &&
+					photos
+						?.filter((e) => {
+							if (q === '') return e;
+							if (e.tags.toLowerCase().includes(q.toLowerCase())) return e;
+						})
+						?.map(({ ...rest }) => <Card {...rest} />)}
+			</InfiniteScroll>
 		</div>
 	);
 }
