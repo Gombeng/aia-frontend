@@ -20,9 +20,6 @@ function App() {
 		const { data } = await axios.get(`${baseUri}/get?page=${page}`);
 		setPhotos((prevPhotos) => [...prevPhotos, ...data.items]);
 		setLoading(false);
-		if (!data.items.length) {
-			setHasMore(false);
-		}
 	}
 
 	return (
